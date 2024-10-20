@@ -1,61 +1,60 @@
 import os
 import sys
-from typing import final
-
 from dotenv import load_dotenv
 from openai import OpenAI
 
 load_dotenv()
 
+initial_query = sys.argv[1]
+
 client = OpenAI(
     api_key=os.getenv('OPENAI_API_KEY'),
 )
 
-def ask(query):
-    thread = client.beta.threads.create(
-        messages=[
-            {
-                "role": "user",
-                "content": query
-            }
-        ],
-        tool_resources={
-            "file_search": {
-                "vector_store_ids": [os.getenv('OPENAI_VECTOR_STORE_ID')]
-            }
+thread = client.beta.threads.create(
+    messages=[
+        {
+            "role": "user",
+            "content": initial_query
+        },
+        {
+            "role": "user",
+            "content": "Veuillez réviser, retravailler (au besoin) et améliorer votre réponse en vous basant sur l'ensemble de documents à votre disposition. Assurez-vous de conserver les références et citations."
+        },
+        {
+            "role": "user",
+            "content": "Veuillez réviser votre réponse pour vous assurer quelle soit claire et concise. Assurez-vous de conserver les références et citations."
         }
-    )
+    ],
+    tool_resources={
+        "file_search": {
+            "vector_store_ids": [os.getenv('OPENAI_VECTOR_STORE_ID')]
+        }
+    }
+)
 
-    run = client.beta.threads.runs.create_and_poll(
-        thread_id=thread.id,
-        assistant_id=os.getenv('OPENAI_ASSISTANT_ID')
-    )
+run = client.beta.threads.runs.create_and_poll(
+    thread_id=thread.id,
+    assistant_id=os.getenv('OPENAI_ASSISTANT_ID')
+)
 
-    messages = list(client.beta.threads.messages.list(thread_id=thread.id, run_id=run.id))
+messages = list(client.beta.threads.messages.list(thread_id=thread.id, run_id=run.id))
 
-    message_content = messages[0].content[0].text
+message_content = messages[0].content[0]
 
-    annotations = message_content.annotations
+message_text = message_content.text
 
-    citations = []
+annotations = message_text.annotations
 
-    for index, annotation in enumerate(annotations):
-        message_content.value = message_content.value.replace(annotation.text, f"[{index}]")
+citations = []
 
-        if file_citation := getattr(annotation, "file_citation", None):
-            cited_file = client.files.retrieve(file_citation.file_id)
-            citations.append(f"[{index}] {cited_file.filename}")
+for index, annotation in enumerate(annotations):
+    message_text.value = message_text.value.replace(annotation.text, f"[{index}]")
 
-    return message_content.value + "\n".join(citations)
+    if file_citation := getattr(annotation, "file_citation", None):
+        cited_file = client.files.retrieve(file_citation.file_id)
+        citations.append(f"[{index}] {cited_file.filename}")
 
-initial_query = sys.argv[1]
-
-response = ask(initial_query)
-
-hops = 3
-
-for i in range(hops):
-    query = f"Un utilisateur vous a posé la question suivante : \"{initial_query}\"\n\nVous avez donné la réponse suivante : \"{response}\"\n\nVeuillez réviser, retravailler (au besoin) et améliorer votre réponse, sans nécessairement l'allonger. Veuillez répondre avec seulement le contenu de votre réponse."
-    response = ask(query)
+response = message_text.value + "\n" + "\n".join(citations)
 
 print(response)
