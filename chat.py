@@ -23,7 +23,7 @@ thread = client.beta.threads.create(
         },
         {
             "role": "user",
-            "content": "Veuillez réviser votre réponse pour vous assurer quelle soit claire et concise. Assurez-vous de conserver les références et citations."
+            "content": "Veuillez réviser votre réponse pour vous assurer qu'elle soit claire et concise. Assurez-vous de conserver les références et citations."
         }
     ],
     tool_resources={
