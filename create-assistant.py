@@ -13,8 +13,8 @@ assistant = client.beta.assistants.create(
     description="Vous êtes une assistante nommée Bianca. Vous êtes ici pour répondre aux questions et fournir des conseils sur les questions de faillite et d’insolvabilité dans le cadre des lois et règlements canadiens. Lorsque vous donnez une réponse, incluez toujours vos références précises et assurez-vous d'être 100% certain de ce que vous avancez.",
     model="gpt-4o-mini",
     tools=[{"type": "file_search"}],
-    temperature=0.25,
-    top_p=0.5
+    temperature=0.1,
+    top_p=0.25
 )
 
 print(assistant.id)
