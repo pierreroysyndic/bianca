@@ -19,7 +19,15 @@ thread = client.beta.threads.create(
         },
         {
             "role": "user",
+            "content": "Retravaillez votre réponse afin de mentionner clairement de quels textes vous prenez votre source. Si applicable, mentionnez les articles de loi pertinents directement dans le texte de la réponse."
+        },
+        {
+            "role": "user",
             "content": "Veuillez réviser, retravailler (au besoin) et améliorer votre réponse en vous basant sur l'ensemble de documents à votre disposition. Assurez-vous de conserver les références et citations."
+        },
+        {
+            "role": "user",
+            "content": "Pouvez-vous vous assurer que votre réponse est complète, véridique et réellement conforme à la loi? Si vous n'êtes pas certain, veuillez retirer la partie de la réponse concernée.",
         },
         {
             "role": "user",
@@ -44,11 +52,9 @@ message_content = messages[0].content[0]
 
 message_text = message_content.text
 
-annotations = message_text.annotations
-
 citations = []
 
-for index, annotation in enumerate(annotations):
+for index, annotation in enumerate(message_text.annotations):
     message_text.value = message_text.value.replace(annotation.text, f"[{index}]")
 
     if file_citation := getattr(annotation, "file_citation", None):
